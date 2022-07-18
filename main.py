@@ -64,10 +64,9 @@ def removePeersPossibles(cells, possibles, digits):
 def removeCellsPossibles(cells, possibles, digits):
     removedPossibles = False
     for cell in cells:
-        for digit in possibles[cell]:
-            if digit not in digits:
-                possibles[cell].remove(digit)
-                removedPossibles = True
+        for digit in possibles[cell] - set(digits):
+            possibles[cell].remove(digit)
+            removedPossibles = True
     return removedPossibles
 
 
@@ -168,22 +167,27 @@ def nakedN2(possibles, n):
     return foundShared
 
 
-def hiddenN(possibles, n):
+def hiddenN(board, possibles, n):
     foundHiddenN = False
     digits = range(9)
     for unit in unitlist:
         values = [set([]) for i in digits]
         for cell in unit:
             for digit in possibles[cell]:
-                values[digit-1].update(cell)
+                values[digit-1].add(cell)
         cs, ds = set([]), []
         for i in digits:
             if 1 < len(values[i]) <= n:
                 cs.update(values[i])
                 ds.append(i+1)
-        if len(cs) and len(ds) == n:
+        if len(cs) == n and len(ds) == n:
             if removeCellsPossibles(cs, possibles, ds): foundHiddenN = True
-        else
+            continue
+        if len(cs) % n == 0 and len(ds) % n == 0:
+            for comb in combin(ds, n):
+                shared = set.intersection(*[values[d - 1] for d in comb])
+                if len(shared) == n:
+                    if removeCellsPossibles(shared, possibles, comb): foundHiddenN = True
     return foundHiddenN
 
 
@@ -232,9 +236,8 @@ def checkUnit(unit, board):
 
 
 def checkSudoku(board):
-    if all(checkUnit(row, board) for row in rowunits) and all(
-            checkUnit(column, board) for column in columnunits) and all(
-        checkUnit(box, board) for box in boxes):
+    if all(checkUnit(row, board) for row in rowunits) and all(checkUnit(column, board) for column in columnunits) and \
+            all(checkUnit(box, board) for box in boxes):
         return True
     return False
 
@@ -242,6 +245,7 @@ def checkSudoku(board):
 # endregion
 
 
+# region display stuff
 def displaySudoku(board):
     "Display these values as a 2-D grid."
     width = 2
@@ -276,6 +280,7 @@ def displayPossibles(possibles):
         if r in 'CF':
             print(line)
     print()
+# endregion
 
 
 # import sudoku as string or 2D-Array
@@ -312,10 +317,15 @@ def strategies2(sudoku, possibles):
     sudokuSolved = False
     cycleCounter = 0
     while not sudokuSolved and cycleCounter <= 5:
+        displaySudoku(sudoku)
         if checkSolvedCells(sudoku, possibles): continue
         if hiddenSingles2(sudoku, possibles): continue
         if nakedN2(possibles, 2): continue
         if nakedN2(possibles, 3): continue
+        if hiddenN(sudoku, possibles, 2): continue
+        if hiddenN(sudoku, possibles, 3): continue
+        if nakedN2(possibles, 4): continue
+        if hiddenN(sudoku, possibles, 4): continue
         cycleCounter += 1
         sudokuSolved = max(len(possibles[s]) for s in squares) <= 1
 
@@ -323,6 +333,7 @@ def strategies2(sudoku, possibles):
 
     if not checkSudoku(sudoku):
         printError('w')
+    displaySudoku(sudoku)
 
 
 @basic_bench
@@ -333,37 +344,43 @@ def backtracking(sudoku, possibles):
         printError('w')
 # endregion
 
+
 def solveOnce(inputString):
+    global rows, cols, squares, rowunits, columnunits, boxes, unitlist, units, peers, foundNakedNs
     rows, cols, squares, rowunits, columnunits, boxes, unitlist, units, peers, possibles, sudoku, \
-    foundNakedNs = setup()
+        foundNakedNs = setup()
 
     importSudoku(sudoku, inputString, possibles)
-    strategies1(sudoku, possibles)
+    start = time.time()
+    # strategies1(sudoku, possibles)
     strategies2(sudoku, possibles)
-    backtracking(sudoku, possibles)
+    # backtracking(sudoku, possibles)
+    print(time.time() - start)
 
 
 def testing(puzzleStrings, count):
+    global rows, cols, squares, rowunits, columnunits, boxes, unitlist, units, peers, foundNakedNs
+
     for i in range(len(puzzleStrings)):
         print("Running sudoku nr. {0}...".format(i + 1))
         inputString = puzzleStrings[i]
         for i in range(count):
             rows, cols, squares, rowunits, columnunits, boxes, unitlist, units, peers, possibles, sudoku, \
-            foundNakedNs = setup()
+                foundNakedNs = setup()
 
             importSudoku(sudoku, inputString, possibles)
             strategies1(sudoku, possibles)
 
         for i in range(count):
             rows, cols, squares, rowunits, columnunits, boxes, unitlist, units, peers, possibles, sudoku, \
-            foundNakedNs = setup()
+                foundNakedNs = setup()
 
             importSudoku(sudoku, inputString, possibles)
             strategies2(sudoku, possibles)
 
         for i in range(count):
             rows, cols, squares, rowunits, columnunits, boxes, unitlist, units, peers, possibles, sudoku, \
-            foundNakedNs = setup()
+                foundNakedNs = setup()
 
             importSudoku(sudoku, inputString, possibles)
             backtracking(sudoku, possibles)
@@ -476,9 +493,8 @@ def main():
                     "000123000040050060000000000200000007760080092500000001000000000080060040000372000",
                     "000123000040050060000000000200000007780040092500000001000000000050090040000372000",
                     "000716000030050020000000000700000006120030045500000001000000000090040080000182000"]
-    inputString = ''
+    inputString = '634200000002300007000900005000000736000023000048000000590000000000005410000031000'
     testCount = 5
-
     solveOnce(inputString)
     #testing(inputStrings, testCount)
     exit()
