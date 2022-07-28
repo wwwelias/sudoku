@@ -317,7 +317,6 @@ def strategies2(sudoku, possibles):
     sudokuSolved = False
     cycleCounter = 0
     while not sudokuSolved and cycleCounter <= 5:
-        displaySudoku(sudoku)
         if checkSolvedCells(sudoku, possibles): continue
         if hiddenSingles2(sudoku, possibles): continue
         if nakedN2(possibles, 2): continue
@@ -333,7 +332,7 @@ def strategies2(sudoku, possibles):
 
     if not checkSudoku(sudoku):
         printError('w')
-    displaySudoku(sudoku)
+
 
 
 @basic_bench
@@ -364,12 +363,14 @@ def testing(puzzleStrings, count):
     for i in range(len(puzzleStrings)):
         print("Running sudoku nr. {0}...".format(i + 1))
         inputString = puzzleStrings[i]
+        """
         for i in range(count):
             rows, cols, squares, rowunits, columnunits, boxes, unitlist, units, peers, possibles, sudoku, \
                 foundNakedNs = setup()
 
             importSudoku(sudoku, inputString, possibles)
             strategies1(sudoku, possibles)
+        """
 
         for i in range(count):
             rows, cols, squares, rowunits, columnunits, boxes, unitlist, units, peers, possibles, sudoku, \
@@ -377,7 +378,6 @@ def testing(puzzleStrings, count):
 
             importSudoku(sudoku, inputString, possibles)
             strategies2(sudoku, possibles)
-
         for i in range(count):
             rows, cols, squares, rowunits, columnunits, boxes, unitlist, units, peers, possibles, sudoku, \
                 foundNakedNs = setup()
@@ -493,10 +493,10 @@ def main():
                     "000123000040050060000000000200000007760080092500000001000000000080060040000372000",
                     "000123000040050060000000000200000007780040092500000001000000000050090040000372000",
                     "000716000030050020000000000700000006120030045500000001000000000090040080000182000"]
-    inputString = '634200000002300007000900005000000736000023000048000000590000000000005410000031000'
-    testCount = 5
-    solveOnce(inputString)
-    #testing(inputStrings, testCount)
+    inputString = '000000000904607000076804100309701080008000300050308702007502610000403208000000000'
+    testCount = 2
+    #solveOnce(inputString)
+    testing(inputStrings, testCount)
     exit()
 
 

@@ -102,13 +102,17 @@ class Square:
 def printError(code):
     if code == 'c':
         print("Contradiction detected!")
-        exit()
+        raise Exception('Contradiction detected!')
+        #exit()
     if code == 'w':
         print("Sudoku has been solved wrongly!")
-        exit()
+        raise Exception('Sudoku has been solved wrongly!')
+        #exit()
     if code == 'i':
         print("Input is incorrect!")
-        exit()
+        raise Exception('Input is incorrect!')
+
+        #exit()
 
 
 def removePeersPossibles(peers, digits):
@@ -385,7 +389,7 @@ def boardToIntArray(sudoku):
 
 
 def main():
-    sudokuString = '000102000060000070008000900400000003050007000200080001009000805070000060000304000'
+    sudokuString = '030000010801006070050080000000007009402060500080000000000200050106040020003000000'
     sudoku = Sudoku()
     importSudoku(sudoku, sudokuString)
     sudoku.display(sudoku.board)
@@ -401,27 +405,41 @@ def main():
 def solveOne(puzzleString):
     sudoku = Sudoku()
     importSudoku(sudoku, puzzleString)
+    sudoku.display(sudoku.board)
     sudoku = solve(sudoku)
-    if not checkSudoku(sudoku):
-        sudoku.display(sudoku.board)
-        printError('w')
+    if sudoku is not None:
+        if not checkSudoku(sudoku):
+            printError('w')
+    else:
+        raise Exception('Sudoku is none!')
     return boardToIntArray(sudoku)
 
 
 def ads():
     global plc
-    AmsNetId = '10.15.96.76.1.1'
-    #AmsNetId = '127.0.0.1.1.1'
+    #AmsNetId = '10.15.96.76.1.1'
+    AmsNetId = '127.0.0.1.1.1'
     # connect to plc and open connection
     plc = pyads.Connection(AmsNetId, pyads.PORT_TC3PLC1)
     plc.open()
     lastInput = ""
     while True:
-        inputArr = plc.read_by_name("GVL.bSudoku", pyads.PLCTYPE_BYTE * 81)
-        if lastInput != inputArr:
-            result = solveOne(inputArr)
-            lastInput = inputArr
-            plc.write_by_name("GVL.bResult", result, pyads.PLCTYPE_BYTE * 81)
+        try:
+            inputArr = plc.read_by_name("GVL.bSudoku", pyads.PLCTYPE_BYTE * 81)
+            if lastInput != inputArr:
+                if max(inputArr) == 0:
+                    result = inputArr
+                else:
+                    try:
+                        result = solveOne(inputArr)
+                        print('Solved sudoku!')
+                    except Exception as err:
+                        result = [1 for i in range(81)]
+                        print(err)
+                plc.write_by_name("GVL.bResult", result, pyads.PLCTYPE_BYTE * 81)
+                lastInput = inputArr
+        except pyads.ADSError as err:
+            print(err)
 
 
 def testing():
@@ -531,10 +549,10 @@ def exit_handler():
     plc.close()
 
 
-atexit.register(exit_handler)
+#atexit.register(exit_handler)
 
 
 if __name__ == "__main__":
-    #main()
-    ads()
+    main()
+    #ads()
     #testing()
